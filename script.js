@@ -1,69 +1,48 @@
-const API_KEY = "4dbc17e007ab436fb66416009dfb59a8";
-const url = "https://newsapi.org/v2/everything?q=";
+const searchMeal = async (e) => {
+    e.preventDefault()
 
-window.addEventListener('load', () => fetchNews("India"))
+    const input = document.querySelector('.input')
+    const image = document.querySelector('img')
+    const title = document.querySelector('.title')
+    const info = document.querySelector('.info')
+    const ingredientsOut = document.querySelector('.ingredients')
 
-function reload() {
-    window.location.reload()
-}
+    const showMealInfo = (meal) => {
+        const { strMeal, strInstructions } = meal
+        title.textContent = strMeal
+        image.src = meal.strMealThumb
+        info.textContent = strInstructions
 
-function redirectTo() {
-    window.location = "weather.html"
-}
-
-const fetchNews = async (query) => {
-    try {
-        const response = await fetch(`${url}${query}&apiKey=${API_KEY}`)
-        const data = await response.json()
-        bindData(data.articles)
-        function bindData(articles) {
-            const cardsContainer = document.getElementById('cards-container')
-            const newsCardTemplate = document.getElementById('template-news-card')
-
-            cardsContainer.innerHTML = ''
-
-            articles.forEach(article => {
-                if (!article.urlToImage) return
-                const cardClone = newsCardTemplate.content.cloneNode(true)
-                fillDataInCard(cardClone, article)
-                cardsContainer.appendChild(cardClone)
-            })
+        const ingredients = []
+        for (let i = 1; i <= 20; i++) {
+            if (meal[`strIngredient${i}`]) {
+                ingredients.push(`${meal[`strIngredient${i}`]} - ${meal[`strMeasure${i}`]}`)
+            } else {
+                break
+            }
         }
-        function fillDataInCard(cardClone, article) {
-            const newsImg = cardClone.querySelector('#news-img')
-            const newsTitle = cardClone.querySelector('#news-title')
-            const newsSource = cardClone.querySelector('#news-source')
-            const newsDesc = cardClone.querySelector('#news-desc')
-            const newsBtn = cardClone.querySelector('#news-btn')
-            newsImg.src = article.urlToImage
-            newsTitle.innerHTML = article.title
-            newsDesc.innerHTML = article.description
-            newsBtn.href = article.url
+        ingredientsOut.innerHTML = `<span class="text-capitalize">${ingredients.map((ing) => `<li class="ing">${ing}</li>`).join("")}</span>`
+    }
 
-            const date = new Date(article.publishedAt).toLocaleString("en-US", {
-                timeZone: "Asia/Jakarta"
-            })
-            newsSource.innerHTML = `${article.source.name} : ${date}`
+    const fetchMealData = async (val) => {
+        const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${val}`)
+        const { meals } = await response.json()
+        return meals
+    }
+    const val = input.value.trim()
+    input.value = ''
+    if (val) {
+        const meals = await fetchMealData(val)
+        if (!meals) {
+            alert('Meal not found :(')
         }
-        const searchButton = document.getElementById("search-btn")
-        const searchText = document.getElementById("search-text")
-        searchButton.addEventListener("click", () => {
-            const query = searchText.value
-            if (!query) return
-            fetchNews(query)
-            searchText.value = ""
-            curSelectedNav?.classList.remove("active")
-            curSelectedNav = null
-        })
-    } catch (err) {
-        console.log(err);
+        meals.forEach(showMealInfo);
+    } else {
+        alert('Please try searching for meal :)')
     }
 }
-let curSelectedNav = null
-function onNavItemClick(id) {
-    fetchNews(id)
-    const navItem = document.getElementById(id)
-    curSelectedNav?.classList.remove("active")
-    curSelectedNav = navItem
-    curSelectedNav.classList.add("active")
-}
+
+const form = document.querySelector('form')
+form.addEventListener("submit", searchMeal)
+const magnify = document.querySelector('.magnify')
+magnify.addEventListener("click", searchMeal)
